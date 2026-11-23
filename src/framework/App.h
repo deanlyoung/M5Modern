@@ -2,7 +2,9 @@
 #include <stdint.h>
 #include "framework/ui/Geometry.h"
 
+#ifndef M5MODERN
 class M5EPD_Canvas;            // forward decl in global namespace
+#endif
 
 namespace paperos {
 
@@ -38,6 +40,10 @@ struct InputEvent {
 class AppSwitcher;
 
 struct AppContext {
+#ifdef M5MODERN
+    class ModernDisplay& display;
+    AppSwitcher& switcher;
+#else
     Display& display;
     ConfigStore& config;
     Storage& storage;
@@ -54,6 +60,7 @@ struct AppContext {
     WebDavServer& webdav;
     MoonrakerClient& printer;
     CalendarService& calendar;
+#endif
 };
 
 class IApp {
@@ -75,7 +82,9 @@ public:
     virtual const char* title() const = 0;
     // Optional: render a per-app widget inside a launcher card.
     // Default implementation does nothing — Launcher draws icon+title.
+#ifndef M5MODERN
     virtual void renderLauncherWidget(M5EPD_Canvas&, Rect) {}
+#endif
 };
 
 } // namespace paperos
