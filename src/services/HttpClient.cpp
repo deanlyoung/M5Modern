@@ -1,9 +1,28 @@
 #include "HttpClient.h"
+#include "TransportPolicy.h"
 #include <WiFi.h>
 #include <string.h>
+#include <SD.h>
 #include "util/Logger.h"
 
 namespace paperos {
+
+bool HttpClient::prepareTls() {
+    if (!ca_pem_.empty()) return true;
+    // Supply trusted roots (including a private CA, if needed) on the SD card.
+    // A missing or unreadable trust store is an error, never an insecure fallback.
+    File f = SD.open("/paperos/ca.pem", FILE_READ);
+    if (!f || f.size() == 0 || f.size() > 32768) return false;
+    ca_pem_.reserve(f.size());
+    while (f.available()) ca_pem_ += static_cast<char>(f.read());
+    f.close();
+    if (!hasPemCertificate(ca_pem_)) {
+        ca_pem_.clear();
+        return false;
+    }
+    secure_.setCACert(ca_pem_.c_str());
+    return true;
+}
 
 // Uses the persistent http_ / secure_ members so the TCP/TLS connection is
 // reused across calls (setReuse(true)). begin() on the same host reuses the
@@ -15,20 +34,12 @@ HttpResponse HttpClient::doRequest(const std::string& url, const std::string& bo
     HttpResponse r;
     if (WiFi.status() != WL_CONNECTED) { r.error = "wifi-down"; return r; }
 
-    const bool is_https = url.size() >= 8 && url.compare(0, 8, "https://") == 0;
+    if (!isSecureUrl(url)) { r.error = "https-required"; return r; }
+    if (!prepareTls()) { r.error = "ca-unavailable"; return r; }
     http_.setReuse(true);
     http_.setTimeout(timeout_ms_);
 
-    bool ok_begin;
-    if (is_https) {
-        // Accept self-signed / untrusted certs — PaperOS is a home-LAN device.
-        // Swap setInsecure() for setCACert(rootCA) if strict validation is
-        // ever needed. Applied once; the TLS session is then reused.
-        if (!secure_ready_) { secure_.setInsecure(); secure_ready_ = true; }
-        ok_begin = http_.begin(secure_, url.c_str());
-    } else {
-        ok_begin = http_.begin(url.c_str());
-    }
+    bool ok_begin = http_.begin(secure_, url.c_str());
     if (!ok_begin) { r.error = "begin-failed"; return r; }
 
     if (!bearer_.empty()) http_.addHeader("Authorization", ("Bearer " + bearer_).c_str());
@@ -60,16 +71,10 @@ bool HttpClient::getBinary(const std::string& url, std::vector<uint8_t>& out, si
     out.clear();
     if (WiFi.status() != WL_CONNECTED) return false;
 
-    const bool is_https = url.size() >= 8 && url.compare(0, 8, "https://") == 0;
+    if (!isSecureUrl(url) || !prepareTls()) return false;
     http_.setReuse(true);
     http_.setTimeout(timeout_ms_);
-    bool ok_begin;
-    if (is_https) {
-        if (!secure_ready_) { secure_.setInsecure(); secure_ready_ = true; }
-        ok_begin = http_.begin(secure_, url.c_str());
-    } else {
-        ok_begin = http_.begin(url.c_str());
-    }
+    bool ok_begin = http_.begin(secure_, url.c_str());
     if (!ok_begin) return false;
     if (!bearer_.empty()) http_.addHeader("Authorization", ("Bearer " + bearer_).c_str());
     if (!api_key_.empty()) http_.addHeader("X-Api-Key", api_key_.c_str());

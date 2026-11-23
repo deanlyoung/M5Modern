@@ -154,11 +154,8 @@ void setup() {
     g_switcher.registerApp("ha",          [](){ return static_cast<paperos::IApp*>(new paperos::HomeAssistantApp()); });
     g_switcher.registerApp("settings",    [](){ return static_cast<paperos::IApp*>(new paperos::SettingsApp()); });
     g_switcher.registerApp("weather",     [](){ return static_cast<paperos::IApp*>(new paperos::WeatherApp()); });
-    g_switcher.registerApp("calendar",    [](){ return static_cast<paperos::IApp*>(new paperos::CalendarApp()); });
     g_switcher.registerApp("screensaver", [](){ return static_cast<paperos::IApp*>(new paperos::Screensaver()); });
-    g_switcher.registerApp("fileserver",  [](){ return static_cast<paperos::IApp*>(new paperos::FileServerApp()); });
     g_switcher.registerApp("games",       [](){ return static_cast<paperos::IApp*>(new paperos::GamesApp()); });
-    g_switcher.registerApp("printer",     [](){ return static_cast<paperos::IApp*>(new paperos::PrinterApp()); });
     g_switcher.setContext(&g_ctx);
 
     {

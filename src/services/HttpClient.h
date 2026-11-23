@@ -45,7 +45,9 @@ private:
     uint32_t timeout_ms_ = 5000;
 
     WiFiClientSecure secure_;     // persistent → TLS session reused across calls
-    bool secure_ready_ = false;   // setInsecure() applied once
+    // Must outlive secure_: setCACert retains a pointer to this PEM text.
+    std::string ca_pem_;
+    bool prepareTls();
     HTTPClient http_;             // persistent → HTTP keep-alive
 };
 
