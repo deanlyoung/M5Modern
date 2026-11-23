@@ -15,5 +15,6 @@ private:
     uint32_t displayed_seconds_ = UINT32_MAX;
     bool running_ = false, finished_ = false;
     void draw(AppContext&);
+    void drawCountdown(AppContext&, uint32_t seconds, bool partial);
 };
 }

@@ -9,6 +9,7 @@ public:
     bool begin();
     M5Canvas& canvas() { return canvas_; }
     void present();
+    void presentRegion(int x, int y, int w, int h, bool quality = false);
     void heading(const char* title, bool showBack = true);
     void button(int x, int y, int w, int h, const char* label, bool filled = false);
 private:

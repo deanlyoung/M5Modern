@@ -14,6 +14,14 @@ void ModernDisplay::present() {
     M5.Display.display();
     M5.Display.waitDisplay();
 }
+void ModernDisplay::presentRegion(int x, int y, int w, int h, bool quality) {
+    M5.Display.setEpdMode(quality ? m5gfx::epd_text : m5gfx::epd_fast);
+    M5.Display.setClipRect(x, y, w, h);
+    canvas_.pushSprite(0, 0);
+    M5.Display.clearClipRect();
+    M5.Display.display(x, y, w, h);
+    M5.Display.waitDisplay();
+}
 void ModernDisplay::heading(const char* title, bool showBack) {
     canvas_.fillSprite(TFT_WHITE);
     canvas_.setTextDatum(top_left);
